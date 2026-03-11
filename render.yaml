@@ -1,0 +1,55 @@
+# ════════════════════════════════════════════════════════════════
+# render.yaml — Render Deployment Blueprint
+# This file tells Render exactly how to deploy your bot.
+# Push this to GitHub → Render reads it automatically.
+# ════════════════════════════════════════════════════════════════
+
+services:
+  # ── Background Worker (the actual bot) ───────────────────────
+  - type: worker                    # NOT a web service — bots don't need a port
+    name: auto-channel-bot
+    runtime: python
+    plan: free                      # Free plan = 750hrs/month (enough for 1 service)
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    
+    # ── Persistent Disk (keeps your database across deploys) ────
+    # Free plan does NOT include disk — upgrade to Starter ($7/mo)
+    # OR remove this section and use free plan (database resets on redeploy)
+    disk:
+      name: bot-data
+      mountPath: /data
+      sizeGB: 1                     # 1GB is plenty for SQLite
+
+    # ── Environment Variables ───────────────────────────────────
+    # These are DEFAULTS — override in Render Dashboard for secrets!
+    # NEVER put real API keys in this file (it goes on GitHub)
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SCRAPE_INTERVAL
+        value: "30"
+      - key: MAX_POSTS_PER_BATCH
+        value: "5"
+      - key: MIN_DISCOUNT_PCT
+        value: "0"
+      - key: ENABLE_TG_GROUPS
+        value: "false"
+      - key: ENABLE_TWITTER
+        value: "false"
+      - key: ENABLE_REDDIT
+        value: "false"
+      - key: GROUP_PROMO_HOURS
+        value: "72"
+      - key: DB_PATH
+        value: "/data/bot_data.db"
+      
+      # ⚠️  ADD THESE IN THE RENDER DASHBOARD (not here):
+      # TELEGRAM_BOT_TOKEN
+      # TELEGRAM_CHANNEL_ID
+      # TELEGRAM_CHANNEL_INVITE
+      # AFFILIATE_AMAZON
+      # AFFILIATE_UDEMY
+      # AFFILIATE_NORDVPN
+      # AFFILIATE_HOSTINGER
+      # AFFILIATE_CANVA

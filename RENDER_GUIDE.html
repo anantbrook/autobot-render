@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deploy Bot to Render — Step by Step Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a12;
+    --card: #111119;
+    --border: #22222e;
+    --accent: #6366f1;
+    --green: #22c55e;
+    --orange: #f97316;
+    --red: #ef4444;
+    --cyan: #22d3ee;
+    --text: #e8e8f0;
+    --muted: #7070a0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-size:15px; line-height:1.7; }
+  .wrap { max-width:860px; margin:0 auto; padding:60px 28px 100px; }
+
+  /* HERO */
+  .hero { text-align:center; padding:60px 0 50px; position:relative; }
+  .hero::before {
+    content:'';
+    position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:600px; height:300px;
+    background: radial-gradient(ellipse at center, rgba(99,102,241,0.12) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .logo-badge {
+    display:inline-flex; align-items:center; gap:10px;
+    background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.3);
+    border-radius:99px; padding:8px 18px; margin-bottom:28px;
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--accent);
+    letter-spacing:0.08em;
+  }
+  .logo-badge span { width:8px; height:8px; background:var(--accent); border-radius:50%; display:inline-block; animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.3)} }
+  h1 { font-family:'Syne',sans-serif; font-size:clamp(32px,5vw,54px); font-weight:800; line-height:1.1; letter-spacing:-0.02em; margin-bottom:16px; }
+  h1 em { font-style:normal; color:var(--accent); }
+  .hero-sub { font-size:16px; color:var(--muted); max-width:520px; margin:0 auto; }
+
+  /* STEP CARDS */
+  .steps { display:flex; flex-direction:column; gap:0; margin-top:60px; }
+  .step {
+    display:flex; gap:0; position:relative;
+  }
+  .step-left {
+    display:flex; flex-direction:column; align-items:center; width:56px; flex-shrink:0;
+  }
+  .step-num {
+    width:40px; height:40px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Syne',sans-serif; font-weight:800; font-size:15px;
+    flex-shrink:0; z-index:1; position:relative;
+  }
+  .step-line {
+    width:2px; flex:1; min-height:24px; margin:4px 0;
+    background:var(--border);
+  }
+  .step:last-child .step-line { display:none; }
+  .step-body {
+    flex:1; padding:0 0 40px 20px;
+  }
+  .step-title {
+    font-family:'Syne',sans-serif; font-weight:700; font-size:19px;
+    margin-bottom:12px; margin-top:8px;
+  }
+  .step-desc { color:#b0b0c8; font-size:14px; margin-bottom:16px; }
+
+  /* colored step variants */
+  .s1 .step-num { background:rgba(99,102,241,0.15); color:var(--accent); border:2px solid rgba(99,102,241,0.4); }
+  .s2 .step-num { background:rgba(34,211,238,0.1); color:var(--cyan); border:2px solid rgba(34,211,238,0.3); }
+  .s3 .step-num { background:rgba(249,115,22,0.1); color:var(--orange); border:2px solid rgba(249,115,22,0.3); }
+  .s4 .step-num { background:rgba(34,197,94,0.1); color:var(--green); border:2px solid rgba(34,197,94,0.3); }
+  .s5 .step-num { background:rgba(99,102,241,0.15); color:var(--accent); border:2px solid rgba(99,102,241,0.4); }
+  .s6 .step-num { background:rgba(34,197,94,0.1); color:var(--green); border:2px solid rgba(34,197,94,0.3); }
+
+  /* INSTRUCTION BOXES */
+  .box {
+    background:var(--card); border:1px solid var(--border);
+    border-radius:12px; overflow:hidden; margin-bottom:12px;
+  }
+  .box-header {
+    padding:12px 16px; border-bottom:1px solid var(--border);
+    font-family:'JetBrains Mono',monospace; font-size:11px;
+    color:var(--muted); letter-spacing:0.08em; text-transform:uppercase;
+    display:flex; align-items:center; gap:8px;
+  }
+  .box-header .dot { width:8px; height:8px; border-radius:50%; }
+  .dot-green { background:#22c55e; }
+  .dot-yellow { background:#eab308; }
+  .dot-red { background:#ef4444; }
+  .box-body { padding:16px; }
+
+  /* SCREENSHOT-STYLE MOCKUPS */
+  .render-ui {
+    background:#141420; border:1px solid #2a2a40; border-radius:10px;
+    padding:0; overflow:hidden; margin-bottom:14px;
+  }
+  .render-topbar {
+    background:#0f0f1a; border-bottom:1px solid #2a2a40;
+    padding:10px 16px; display:flex; align-items:center; gap:8px;
+  }
+  .render-topbar .dot { width:10px; height:10px; border-radius:50%; }
+  .render-url { font-family:'JetBrains Mono',monospace; font-size:11px; color:#5050a0; margin-left:8px; }
+  .render-content { padding:16px; }
+  .render-row {
+    display:flex; gap:10px; align-items:center;
+    padding:10px 12px; border-radius:8px; margin-bottom:6px;
+    border:1px solid #2a2a40; background:#0f0f1a;
+  }
+  .render-row:last-child { margin-bottom:0; }
+  .render-label { font-family:'JetBrains Mono',monospace; font-size:12px; color:#8888b8; min-width:220px; }
+  .render-value { font-family:'JetBrains Mono',monospace; font-size:12px; color:#22c55e; }
+  .render-input {
+    flex:1; background:#1a1a2a; border:1px solid #3a3a55;
+    border-radius:6px; padding:6px 10px;
+    font-family:'JetBrains Mono',monospace; font-size:12px; color:#e8e8ff;
+  }
+
+  /* ENV TABLE */
+  .env-table { width:100%; border-collapse:collapse; }
+  .env-table th {
+    font-family:'JetBrains Mono',monospace; font-size:10px;
+    text-transform:uppercase; letter-spacing:0.1em; color:var(--muted);
+    padding:10px 12px; text-align:left; border-bottom:1px solid var(--border);
+  }
+  .env-table td { padding:10px 12px; font-size:13px; border-bottom:1px solid rgba(34,34,46,0.6); vertical-align:top; }
+  .env-table tr:last-child td { border-bottom:none; }
+  .env-key { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--cyan); }
+  .req { color:var(--red); font-size:11px; font-family:'JetBrains Mono',monospace; }
+  .opt { color:var(--muted); font-size:11px; font-family:'JetBrains Mono',monospace; }
+
+  /* ALERT */
+  .alert {
+    border-radius:10px; padding:14px 16px; margin-bottom:14px;
+    display:flex; gap:12px; align-items:flex-start;
+    font-size:13.5px;
+  }
+  .alert-icon { font-size:18px; flex-shrink:0; margin-top:1px; }
+  .alert.warn { background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.2); }
+  .alert.info { background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2); }
+  .alert.success { background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.2); }
+
+  /* CODE */
+  code, .mono { font-family:'JetBrains Mono',monospace; font-size:12.5px; }
+  .code-block {
+    background:#080810; border:1px solid var(--border); border-radius:8px;
+    padding:14px 16px; font-family:'JetBrains Mono',monospace; font-size:12.5px;
+    line-height:1.8; color:#c8c8e0; margin-bottom:12px; overflow-x:auto;
+  }
+  .kw { color:#a78bfa; }
+  .st { color:#86efac; }
+  .cm { color:#444466; }
+
+  /* PILL */
+  .pill { display:inline-block; font-size:11px; padding:2px 9px; border-radius:99px; font-family:'JetBrains Mono',monospace; }
+  .pill-green { background:rgba(34,197,94,0.1); color:#22c55e; border:1px solid rgba(34,197,94,0.25); }
+  .pill-red { background:rgba(239,68,68,0.1); color:#ef4444; border:1px solid rgba(239,68,68,0.25); }
+  .pill-blue { background:rgba(99,102,241,0.1); color:#818cf8; border:1px solid rgba(99,102,241,0.25); }
+
+  /* PLAN TABLE */
+  .plan-table { width:100%; border-collapse:collapse; }
+  .plan-table th { font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); padding:10px 14px; text-align:left; border-bottom:1px solid var(--border); }
+  .plan-table td { padding:12px 14px; font-size:13px; border-bottom:1px solid rgba(34,34,46,0.6); }
+  .plan-table tr:last-child td { border-bottom:none; }
+  .check { color:var(--green); }
+  .cross { color:var(--red); }
+
+  /* FOOTER */
+  footer { margin-top:80px; padding-top:28px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+  footer p { font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="logo-badge"><span></span> DEPLOYMENT GUIDE</div>
+    <h1>Deploy Your Bot to<br><em>Render</em> in 6 Steps</h1>
+    <p class="hero-sub">Free 24/7 hosting for your automated Telegram channel bot — no server knowledge needed.</p>
+  </div>
+
+  <!-- STEPS -->
+  <div class="steps">
+
+    <!-- STEP 1 -->
+    <div class="step s1">
+      <div class="step-left">
+        <div class="step-num">1</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Push Your Bot to GitHub</div>
+        <div class="step-desc">Render deploys directly from GitHub. You need to put your bot files there first.</div>
+
+        <div class="alert info"><div class="alert-icon">ℹ️</div><div>If you've never used GitHub: go to <strong>github.com</strong>, create a free account, then follow the steps below.</div></div>
+
+        <div class="box">
+          <div class="box-header"><span class="dot dot-green"></span><span class="dot dot-yellow"></span><span class="dot dot-red"></span> Terminal / Command Prompt</div>
+          <div class="box-body">
+            <div class="code-block">
+<span class="cm"># 1. Install Git if you don't have it: https://git-scm.com</span>
+
+<span class="cm"># 2. Navigate to your bot folder</span>
+<span class="kw">cd</span> path/to/autobot
+
+<span class="cm"># 3. Initialize a git repo</span>
+<span class="kw">git</span> init
+<span class="kw">git</span> add .
+<span class="kw">git</span> commit -m <span class="st">"Initial bot commit"</span>
+
+<span class="cm"># 4. Create a repo on GitHub.com (click + → New Repository)
+#    Name it: auto-channel-bot  |  Set to Private ✓
+#    Copy the repo URL they give you, then:</span>
+
+<span class="kw">git</span> remote add origin https://github.com/YOUR_USERNAME/auto-channel-bot.git
+<span class="kw">git</span> push -u origin main
+            </div>
+          </div>
+        </div>
+        <div class="alert warn"><div class="alert-icon">⚠️</div><div>Make sure <strong>.gitignore</strong> is in your folder (it's included). This prevents your API keys from being uploaded. The <code>config.py</code> reads from environment variables — no real keys are in the code.</div></div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="step s2">
+      <div class="step-left">
+        <div class="step-num">2</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Create a Render Account & New Service</div>
+        <div class="step-desc">Render is where your bot will run 24/7. Free plan is enough to start.</div>
+
+        <div class="box">
+          <div class="box-body" style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <span style="background:rgba(99,102,241,0.2);color:#818cf8;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;margin-top:2px;">1</span>
+              <div>Go to <strong style="color:#818cf8;">render.com</strong> → click <strong>Get Started for Free</strong> → sign up with GitHub (easiest)</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <span style="background:rgba(99,102,241,0.2);color:#818cf8;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;margin-top:2px;">2</span>
+              <div>Click <strong>New +</strong> in the top right → Select <strong>Background Worker</strong></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <span style="background:rgba(99,102,241,0.2);color:#818cf8;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;margin-top:2px;">3</span>
+              <div>Click <strong>Connect GitHub</strong> → find your <code>auto-channel-bot</code> repo → click <strong>Connect</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="render-ui">
+          <div class="render-topbar">
+            <div class="dot" style="background:#ef4444;"></div>
+            <div class="dot" style="background:#eab308;"></div>
+            <div class="dot" style="background:#22c55e;"></div>
+            <span class="render-url">dashboard.render.com → New Background Worker</span>
+          </div>
+          <div class="render-content">
+            <div class="render-row">
+              <span class="render-label">Name</span>
+              <div class="render-input">auto-channel-bot</div>
+            </div>
+            <div class="render-row">
+              <span class="render-label">Runtime</span>
+              <div class="render-input">Python 3</div>
+            </div>
+            <div class="render-row">
+              <span class="render-label">Branch</span>
+              <div class="render-input">main</div>
+            </div>
+            <div class="render-row">
+              <span class="render-label">Build Command</span>
+              <div class="render-input" style="color:#86efac;">pip install -r requirements.txt</div>
+            </div>
+            <div class="render-row">
+              <span class="render-label">Start Command</span>
+              <div class="render-input" style="color:#86efac;">python main.py</div>
+            </div>
+            <div class="render-row">
+              <span class="render-label">Plan</span>
+              <div class="render-input">Free ← select this</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert warn"><div class="alert-icon">⚠️</div><div><strong>Do NOT click Deploy yet.</strong> You need to add your environment variables in Step 3 first, otherwise the bot will crash on first start.</div></div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="step s3">
+      <div class="step-left">
+        <div class="step-num">3</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Add Your Environment Variables</div>
+        <div class="step-desc">This is where you put your real API keys — safely stored by Render, never in your code.</div>
+
+        <div style="font-size:13px;color:#b0b0c8;margin-bottom:12px;">On the service creation page, scroll down to <strong>Environment Variables</strong> → click <strong>Add Environment Variable</strong> for each one:</div>
+
+        <div class="box">
+          <div class="box-header"><span class="dot dot-green"></span>Environment Variables to Add in Render Dashboard</div>
+          <div class="box-body" style="padding:0;">
+            <table class="env-table">
+              <thead>
+                <tr><th>Variable Name</th><th>Value to Set</th><th>Required?</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="env-key">TELEGRAM_BOT_TOKEN</span></td>
+                  <td>Your token from @BotFather<br><span style="font-size:12px;color:#5050a0;">e.g. 7512345678:AAFabcXYZ...</span></td>
+                  <td><span class="req">REQUIRED</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">TELEGRAM_CHANNEL_ID</span></td>
+                  <td>Your channel username or ID<br><span style="font-size:12px;color:#5050a0;">e.g. @my_deals_channel</span></td>
+                  <td><span class="req">REQUIRED</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">TELEGRAM_CHANNEL_INVITE</span></td>
+                  <td>Public link to your channel<br><span style="font-size:12px;color:#5050a0;">e.g. https://t.me/my_deals_channel</span></td>
+                  <td><span class="req">REQUIRED</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">AFFILIATE_AMAZON</span></td>
+                  <td>Your Amazon affiliate link<br><span style="font-size:12px;color:#5050a0;">e.g. https://amzn.to/YOURTAG</span></td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">AFFILIATE_UDEMY</span></td>
+                  <td>Your Udemy affiliate link</td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">AFFILIATE_NORDVPN</span></td>
+                  <td>Your NordVPN affiliate link</td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">AFFILIATE_HOSTINGER</span></td>
+                  <td>Your Hostinger affiliate link</td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">AFFILIATE_CANVA</span></td>
+                  <td>Your Canva affiliate link</td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">OPENAI_API_KEY</span></td>
+                  <td>OpenAI key for better post writing<br><span style="font-size:12px;color:#5050a0;">Get at platform.openai.com/api-keys</span></td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">BITLY_TOKEN</span></td>
+                  <td>Bitly API token for click tracking<br><span style="font-size:12px;color:#5050a0;">Get at bitly.com → Settings → Developer</span></td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">TG_TARGET_GROUPS</span></td>
+                  <td>Groups to promote in (comma-separated)<br><span style="font-size:12px;color:#5050a0;">e.g. group1,group2,group3</span></td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+                <tr>
+                  <td><span class="env-key">ENABLE_TG_GROUPS</span></td>
+                  <td><span style="font-family:'JetBrains Mono',monospace;">true</span> or <span style="font-family:'JetBrains Mono',monospace;">false</span></td>
+                  <td><span class="opt">optional</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="step s4">
+      <div class="step-left">
+        <div class="step-num">4</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Add Persistent Disk (Keep Your Database)</div>
+        <div class="step-desc">Without this, the bot's database (which prevents duplicate posts) resets every time you redeploy. <strong>Highly recommended.</strong></div>
+
+        <div class="box">
+          <div class="box-header"><span class="dot dot-yellow"></span>Render — Add Disk</div>
+          <div class="box-body" style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;">
+            <div>On the service page → scroll to <strong>Disks</strong> → click <strong>Add Disk</strong></div>
+            <div class="render-ui" style="margin:4px 0 0 0;">
+              <div class="render-content">
+                <div class="render-row">
+                  <span class="render-label">Name</span>
+                  <div class="render-input">bot-data</div>
+                </div>
+                <div class="render-row">
+                  <span class="render-label">Mount Path</span>
+                  <div class="render-input" style="color:#86efac;">/data</div>
+                </div>
+                <div class="render-row">
+                  <span class="render-label">Size</span>
+                  <div class="render-input">1 GB</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">💰 Render Plan Comparison</div>
+          <div class="box-body" style="padding:0;">
+            <table class="plan-table">
+              <thead><tr><th>Feature</th><th>Free Plan</th><th>Starter ($7/mo)</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>Bot runs 24/7</td>
+                  <td><span class="check">✓ Yes</span></td>
+                  <td><span class="check">✓ Yes</span></td>
+                </tr>
+                <tr>
+                  <td>Persistent disk (database)</td>
+                  <td><span class="cross">✗ No</span> — resets on redeploy</td>
+                  <td><span class="check">✓ Yes</span> — database survives</td>
+                </tr>
+                <tr>
+                  <td>Deploy time</td>
+                  <td>~5 min (slower)</td>
+                  <td>~2 min (faster)</td>
+                </tr>
+                <tr>
+                  <td>Best for</td>
+                  <td>Testing & early stage</td>
+                  <td>⭐ Production use</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="alert info"><div class="alert-icon">💡</div><div>On the <strong>Free plan</strong> the bot still works — it just re-scrapes everything fresh each time you redeploy. Once you're getting subscribers and income, upgrade to Starter for $7/mo to keep the database.</div></div>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="step s5">
+      <div class="step-left">
+        <div class="step-num">5</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Click "Create Background Worker" — Deploy!</div>
+        <div class="step-desc">Render builds and starts your bot automatically. Watch the deploy log.</div>
+
+        <div class="box">
+          <div class="box-header"><span class="dot dot-green"></span><span class="dot dot-yellow"></span><span class="dot dot-red"></span> Render Deploy Logs — What You Should See</div>
+          <div class="box-body">
+            <div class="code-block">
+==> Building with pip...
+==> Running: pip install -r requirements.txt
+Successfully installed python-telegram-bot feedparser httpx ...
+
+==> Starting service with: python main.py
+
+╔══════════════════════════════════════════════════════╗
+║        AUTO CHANNEL BOT — Starting Up               ║
+╚══════════════════════════════════════════════════════╝
+
+<span style="color:#22c55e;">✅ Config validated</span>
+<span style="color:#22c55e;">✅ Database initialized</span>
+<span style="color:#22c55e;">🚀 Running initial scrape...</span>
+<span style="color:#22c55e;">✅ Queued 8 new deals</span>
+<span style="color:#22c55e;">✅ Queued 5 new courses</span>
+<span style="color:#22c55e;">✅ Queued 12 new jobs</span>
+<span style="color:#22c55e;">📨 Sending first posts...</span>
+<span style="color:#22c55e;">✅ Post sent to @your_channel</span>
+<span style="color:#22c55e;">✅ Post sent to @your_channel</span>
+<span style="color:#22c55e;">✅ Post sent to @your_channel</span>
+<span style="color:#22c55e;">🤖 Bot is LIVE on Render! Scheduler running...</span>
+   📅 scrape_deals → next run: 2026-03-12 09:30:00+00:00
+   📅 pub_deals_08_00 → next run: 2026-03-13 08:00:00+00:00
+            </div>
+          </div>
+        </div>
+
+        <div class="alert success"><div class="alert-icon">✅</div><div>If you see <strong>"Bot is LIVE on Render!"</strong> in the logs and posts appearing in your Telegram channel — your bot is fully deployed and running 24/7!</div></div>
+      </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="step s6">
+      <div class="step-left">
+        <div class="step-num">6</div>
+        <div class="step-line"></div>
+      </div>
+      <div class="step-body">
+        <div class="step-title">Auto-Deploy on Every Code Update</div>
+        <div class="step-desc">Whenever you push changes to GitHub, Render automatically redeploys your bot with zero downtime.</div>
+
+        <div class="box">
+          <div class="box-body" style="font-size:13.5px;display:flex;flex-direction:column;gap:10px;">
+            <div>To update your bot at any time:</div>
+            <div class="code-block" style="margin:0;">
+<span class="cm"># Make your changes to any file</span>
+<span class="kw">git</span> add .
+<span class="kw">git</span> commit -m <span class="st">"Updated posting schedule"</span>
+<span class="kw">git</span> push
+<span class="cm">
+# Render detects the push → auto-redeploys in ~2-3 min
+# Check live logs: Render Dashboard → your service → Logs</span>
+            </div>
+            <div>Render Dashboard → <strong>your service</strong> → <strong>Auto-Deploy</strong> should say <strong style="color:#22c55e;">Yes</strong></div>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">🔍 How to Check Your Bot is Working</div>
+          <div class="box-body" style="display:flex;flex-direction:column;gap:8px;font-size:13.5px;">
+            <div><strong>1. Render Logs:</strong> Dashboard → your service → <strong>Logs</strong> tab → see real-time output</div>
+            <div><strong>2. Telegram Channel:</strong> Check posts are appearing on schedule</div>
+            <div><strong>3. Service Status:</strong> Should show <span class="pill pill-green">● Live</span> (not <span class="pill pill-red">● Failed</span>)</div>
+          </div>
+        </div>
+
+        <div class="box">
+          <div class="box-header">🚑 Common Errors & Fixes</div>
+          <div class="box-body" style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;">
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;color:#ef4444;font-size:12px;margin-bottom:4px;">❌ TELEGRAM_BOT_TOKEN env var not set</div>
+              <div style="color:#b0b0c8;">→ Go to Render → Environment → make sure you added <code>TELEGRAM_BOT_TOKEN</code></div>
+            </div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;color:#ef4444;font-size:12px;margin-bottom:4px;">❌ Forbidden: bot is not a member of the channel</div>
+              <div style="color:#b0b0c8;">→ Add your bot as admin to the Telegram channel (Step 1c in SETUP_GUIDE)</div>
+            </div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;color:#ef4444;font-size:12px;margin-bottom:4px;">❌ Build failed: no module named 'xyz'</div>
+              <div style="color:#b0b0c8;">→ Make sure <code>requirements.txt</code> is in your repo root and was pushed to GitHub</div>
+            </div>
+            <div>
+              <div style="font-family:'JetBrains Mono',monospace;color:#ef4444;font-size:12px;margin-bottom:4px;">❌ Service keeps restarting</div>
+              <div style="color:#b0b0c8;">→ Check the Logs tab for the actual error. Most common: missing env var or bot not admin in channel</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end steps -->
+
+  <!-- SUMMARY -->
+  <div style="background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:28px;margin-top:40px;">
+    <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:16px;">🎉 Once Live — What Happens Automatically</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="background:rgba(0,0,0,0.3);border-radius:10px;padding:14px;font-size:13.5px;">
+        <div style="color:#818cf8;font-weight:600;margin-bottom:6px;">Every 30 minutes</div>
+        Scrapers run and find new deals, courses & jobs
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border-radius:10px;padding:14px;font-size:13.5px;">
+        <div style="color:#22d3ee;font-weight:600;margin-bottom:6px;">11 times per day</div>
+        Posts published to your channel on schedule
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border-radius:10px;padding:14px;font-size:13.5px;">
+        <div style="color:#f97316;font-weight:600;margin-bottom:6px;">Every post</div>
+        Affiliate links injected automatically for income
+      </div>
+      <div style="background:rgba(0,0,0,0.3);border-radius:10px;padding:14px;font-size:13.5px;">
+        <div style="color:#22c55e;font-weight:600;margin-bottom:6px;">Once per day</div>
+        Channel promoted to groups for subscriber growth
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Auto Channel Bot — Render Deployment Guide</p>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#333355;">render.com • github.com • telegram bot api</p>
+  </footer>
+
+</div>
+</body>
+</html>
